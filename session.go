@@ -13,9 +13,9 @@ import (
 
 	"github.com/google/uuid"
 
-	internalauth "github.com/giztoy/dashscope-realtime-go/internal/auth"
-	internalproto "github.com/giztoy/dashscope-realtime-go/internal/protocol/dashscope"
-	transportws "github.com/giztoy/dashscope-realtime-go/internal/transport/websocket"
+	internalauth "github.com/GizClaw/dashscope-realtime-go/internal/auth"
+	internalproto "github.com/GizClaw/dashscope-realtime-go/internal/protocol/dashscope"
+	transportws "github.com/GizClaw/dashscope-realtime-go/internal/transport/websocket"
 )
 
 // RealtimeService provides realtime session operations.

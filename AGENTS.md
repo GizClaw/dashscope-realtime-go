@@ -2,7 +2,7 @@
 Guide for coding agents working in this repository.
 
 ## 1) Repository overview
-- Module: `github.com/giztoy/dashscope-realtime-go`
+- Module: `github.com/GizClaw/dashscope-realtime-go`
 - Go version: `1.26`
 - Public package: root package `dashscope`
 - Internal packages:

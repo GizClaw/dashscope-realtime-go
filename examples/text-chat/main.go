@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	dashscope "github.com/giztoy/dashscope-realtime-go"
+	dashscope "github.com/GizClaw/dashscope-realtime-go"
 )
 
 type turn struct {

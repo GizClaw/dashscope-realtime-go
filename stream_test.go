@@ -3,7 +3,7 @@ package dashscope
 import (
 	"testing"
 
-	internalproto "github.com/giztoy/dashscope-realtime-go/internal/protocol/dashscope"
+	internalproto "github.com/GizClaw/dashscope-realtime-go/internal/protocol/dashscope"
 )
 
 func TestConvertWireEventMapsResponseAndIndexes(t *testing.T) {

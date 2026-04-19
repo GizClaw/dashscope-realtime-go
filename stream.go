@@ -5,8 +5,8 @@ import (
 	"encoding/base64"
 	"fmt"
 
-	internalproto "github.com/giztoy/dashscope-realtime-go/internal/protocol/dashscope"
-	transportws "github.com/giztoy/dashscope-realtime-go/internal/transport/websocket"
+	internalproto "github.com/GizClaw/dashscope-realtime-go/internal/protocol/dashscope"
+	transportws "github.com/GizClaw/dashscope-realtime-go/internal/transport/websocket"
 )
 
 type stream struct {

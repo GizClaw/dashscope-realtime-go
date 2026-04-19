@@ -1,4 +1,4 @@
-module github.com/giztoy/dashscope-realtime-go
+module github.com/GizClaw/dashscope-realtime-go
 
 go 1.26
 

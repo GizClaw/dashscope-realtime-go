@@ -1,8 +1,8 @@
 # dashscope-realtime-go
 
-[![CI](https://github.com/giztoy/dashscope-realtime-go/actions/workflows/ci.yml/badge.svg)](https://github.com/giztoy/dashscope-realtime-go/actions/workflows/ci.yml)
-[![Go Report: A+](https://img.shields.io/badge/Go%20Report-A%2B-brightgreen)](https://goreportcard.com/report/github.com/giztoy/dashscope-realtime-go)
-[![Code Scan: A](https://img.shields.io/badge/Code%20Scan-A-brightgreen)](https://github.com/giztoy/dashscope-realtime-go/security/code-scanning)
+[![CI](https://github.com/GizClaw/dashscope-realtime-go/actions/workflows/ci.yml/badge.svg)](https://github.com/GizClaw/dashscope-realtime-go/actions/workflows/ci.yml)
+[![Go Report: A+](https://img.shields.io/badge/Go%20Report-A%2B-brightgreen)](https://goreportcard.com/report/github.com/GizClaw/dashscope-realtime-go)
+[![Code Scan: A](https://img.shields.io/badge/Code%20Scan-A-brightgreen)](https://github.com/GizClaw/dashscope-realtime-go/security/code-scanning)
 
 A lightweight Go SDK for the DashScope Realtime API.
 
@@ -20,7 +20,7 @@ This repository focuses on realtime capabilities only (text/audio streaming) and
 ## Installation
 
 ```bash
-go get github.com/giztoy/dashscope-realtime-go
+go get github.com/GizClaw/dashscope-realtime-go
 ```
 
 ---
@@ -37,7 +37,7 @@ import (
     "os"
     "time"
 
-    dashscope "github.com/giztoy/dashscope-realtime-go"
+    dashscope "github.com/GizClaw/dashscope-realtime-go"
 )
 
 func main() {
