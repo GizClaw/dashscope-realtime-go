@@ -39,10 +39,16 @@ func TestDecodeServerEventChoicesFormat(t *testing.T) {
 func TestDecodeServerEventError(t *testing.T) {
 	input := []byte(`{
 		"type": "error",
+		"request_id": "req_top",
+		"log_id": "log_top",
+		"trace_id": "trace_top",
 		"error": {
 			"type": "invalid_request_error",
 			"code": "InvalidApiKey",
-			"message": "invalid token"
+			"message": "invalid token",
+			"request_id": "req_error",
+			"log_id": "log_error",
+			"trace_id": "trace_error"
 		}
 	}`)
 
@@ -60,6 +66,24 @@ func TestDecodeServerEventError(t *testing.T) {
 	if event.Error.Code != "InvalidApiKey" {
 		t.Fatalf("event.Error.Code = %q, want %q", event.Error.Code, "InvalidApiKey")
 	}
+	if event.RequestID != "req_top" {
+		t.Fatalf("event.RequestID = %q, want %q", event.RequestID, "req_top")
+	}
+	if event.LogID != "log_top" {
+		t.Fatalf("event.LogID = %q, want %q", event.LogID, "log_top")
+	}
+	if event.TraceID != "trace_top" {
+		t.Fatalf("event.TraceID = %q, want %q", event.TraceID, "trace_top")
+	}
+	if event.Error.RequestID != "req_error" {
+		t.Fatalf("event.Error.RequestID = %q, want %q", event.Error.RequestID, "req_error")
+	}
+	if event.Error.LogID != "log_error" {
+		t.Fatalf("event.Error.LogID = %q, want %q", event.Error.LogID, "log_error")
+	}
+	if event.Error.TraceID != "trace_error" {
+		t.Fatalf("event.Error.TraceID = %q, want %q", event.Error.TraceID, "trace_error")
+	}
 }
 
 func TestDecodeServerEventUsage(t *testing.T) {
@@ -67,6 +91,9 @@ func TestDecodeServerEventUsage(t *testing.T) {
 		"type": "response.done",
 		"response": {
 			"id": "resp_1",
+			"request_id": "req_response",
+			"log_id": "log_response",
+			"trace_id": "trace_response",
 			"usage": {
 				"total_tokens": 3,
 				"input_tokens": 1,
@@ -81,6 +108,18 @@ func TestDecodeServerEventUsage(t *testing.T) {
 	}
 	if event.ResponseID != "resp_1" {
 		t.Fatalf("event.ResponseID = %q, want %q", event.ResponseID, "resp_1")
+	}
+	if event.Response == nil {
+		t.Fatalf("event.Response is nil")
+	}
+	if event.Response.RequestID != "req_response" {
+		t.Fatalf("event.Response.RequestID = %q, want %q", event.Response.RequestID, "req_response")
+	}
+	if event.Response.LogID != "log_response" {
+		t.Fatalf("event.Response.LogID = %q, want %q", event.Response.LogID, "log_response")
+	}
+	if event.Response.TraceID != "trace_response" {
+		t.Fatalf("event.Response.TraceID = %q, want %q", event.Response.TraceID, "trace_response")
 	}
 	if event.Usage == nil {
 		t.Fatalf("event.Usage is nil")

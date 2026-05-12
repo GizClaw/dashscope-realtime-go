@@ -70,6 +70,9 @@ type UsageData struct {
 // ResponseData is response payload from server events.
 type ResponseData struct {
 	ID           string            `json:"id,omitempty"`
+	RequestID    string            `json:"request_id,omitempty"`
+	LogID        string            `json:"log_id,omitempty"`
+	TraceID      string            `json:"trace_id,omitempty"`
 	Status       string            `json:"status,omitempty"`
 	StatusDetail *StatusDetailData `json:"status_detail,omitempty"`
 	Output       []OutputItemData  `json:"output,omitempty"`
@@ -102,16 +105,22 @@ type ContentPartData struct {
 
 // EventErrorData is wire error payload.
 type EventErrorData struct {
-	Type    string `json:"type,omitempty"`
-	Code    string `json:"code,omitempty"`
-	Message string `json:"message,omitempty"`
-	Param   string `json:"param,omitempty"`
+	Type      string `json:"type,omitempty"`
+	Code      string `json:"code,omitempty"`
+	Message   string `json:"message,omitempty"`
+	Param     string `json:"param,omitempty"`
+	RequestID string `json:"request_id,omitempty"`
+	LogID     string `json:"log_id,omitempty"`
+	TraceID   string `json:"trace_id,omitempty"`
 }
 
 // WireEvent is decoded server message.
 type WireEvent struct {
 	Type         string
 	EventID      string
+	RequestID    string
+	LogID        string
+	TraceID      string
 	Session      *SessionData
 	Response     *ResponseData
 	Item         *OutputItemData

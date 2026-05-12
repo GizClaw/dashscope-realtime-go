@@ -120,6 +120,16 @@ Public API errors are exposed as `*dashscope.Error`.
 ```go
 if apiErr, ok := dashscope.AsError(err); ok {
     fmt.Println(apiErr.Code, apiErr.HTTPStatus, apiErr.Message)
+    fmt.Println(apiErr.RequestID, apiErr.LogID, apiErr.TraceID)
+}
+```
+
+Realtime events also expose debugging identifiers when DashScope returns them:
+
+```go
+if event.Error != nil {
+    log.Printf("code=%s request_id=%s log_id=%s trace_id=%s",
+        event.Error.Code, event.Error.RequestID, event.Error.LogID, event.Error.TraceID)
 }
 ```
 

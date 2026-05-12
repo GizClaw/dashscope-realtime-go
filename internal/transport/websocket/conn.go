@@ -39,6 +39,7 @@ type ConnectError struct {
 	Err        error
 	StatusCode int
 	Body       string
+	Headers    http.Header
 }
 
 func (e *ConnectError) Error() string {
@@ -287,6 +288,7 @@ func dialOnce(ctx context.Context, cfg Config) (*coderws.Conn, error) {
 		ce := &ConnectError{Err: err}
 		if resp != nil {
 			ce.StatusCode = resp.StatusCode
+			ce.Headers = cloneHeader(resp.Header)
 			if resp.Body != nil {
 				body, readErr := io.ReadAll(io.LimitReader(resp.Body, 4096))
 				if readErr == nil {
@@ -310,4 +312,15 @@ func withTimeout(ctx context.Context, timeout time.Duration) (context.Context, c
 		return context.WithCancel(ctx)
 	}
 	return context.WithTimeout(ctx, timeout)
+}
+
+func cloneHeader(header http.Header) http.Header {
+	if header == nil {
+		return nil
+	}
+	cloned := make(http.Header, len(header))
+	for key, values := range header {
+		cloned[key] = append([]string(nil), values...)
+	}
+	return cloned
 }

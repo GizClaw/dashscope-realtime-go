@@ -11,6 +11,8 @@ import (
 
 	coderws "github.com/coder/websocket"
 	"github.com/coder/websocket/wsjson"
+
+	transportws "github.com/GizClaw/dashscope-realtime-go/internal/transport/websocket"
 )
 
 func TestRealtimeSessionTextPath(t *testing.T) {
@@ -113,6 +115,15 @@ func TestRealtimeSessionAuthFailure(t *testing.T) {
 	if apiErr.Code != ErrCodeInvalidAPIKey {
 		t.Fatalf("apiErr.Code = %q, want %q", apiErr.Code, ErrCodeInvalidAPIKey)
 	}
+	if apiErr.RequestID != "req_auth_1" {
+		t.Fatalf("apiErr.RequestID = %q, want %q", apiErr.RequestID, "req_auth_1")
+	}
+	if apiErr.LogID != "log_auth_1" {
+		t.Fatalf("apiErr.LogID = %q, want %q", apiErr.LogID, "log_auth_1")
+	}
+	if apiErr.TraceID != "trace_auth_1" {
+		t.Fatalf("apiErr.TraceID = %q, want %q", apiErr.TraceID, "trace_auth_1")
+	}
 }
 
 func TestRealtimeSessionEmptyAPIKeyFailure(t *testing.T) {
@@ -135,6 +146,37 @@ func TestRealtimeSessionEmptyAPIKeyFailure(t *testing.T) {
 	}
 	if apiErr.Code != ErrCodeInvalidAPIKey {
 		t.Fatalf("apiErr.Code = %q, want %q", apiErr.Code, ErrCodeInvalidAPIKey)
+	}
+}
+
+func TestMapConnectErrorIncludesDebugIDsFromBodyAndHeaders(t *testing.T) {
+	headers := http.Header{}
+	headers.Set("X-Request-Id", "req_header")
+
+	err := mapConnectError(&transportws.ConnectError{
+		StatusCode: http.StatusTooManyRequests,
+		Headers:    headers,
+		Body:       `{"code":"Throttled","message":"slow down","request_id":"req_body","log_id":"log_body","trace_id":"trace_body"}`,
+	})
+
+	apiErr, ok := AsError(err)
+	if !ok {
+		t.Fatalf("mapConnectError() error = %T, want *Error", err)
+	}
+	if apiErr.Code != "Throttled" {
+		t.Fatalf("apiErr.Code = %q, want %q", apiErr.Code, "Throttled")
+	}
+	if apiErr.Message != "slow down" {
+		t.Fatalf("apiErr.Message = %q, want %q", apiErr.Message, "slow down")
+	}
+	if apiErr.RequestID != "req_header" {
+		t.Fatalf("apiErr.RequestID = %q, want %q", apiErr.RequestID, "req_header")
+	}
+	if apiErr.LogID != "log_body" {
+		t.Fatalf("apiErr.LogID = %q, want %q", apiErr.LogID, "log_body")
+	}
+	if apiErr.TraceID != "trace_body" {
+		t.Fatalf("apiErr.TraceID = %q, want %q", apiErr.TraceID, "trace_body")
 	}
 }
 
@@ -292,6 +334,9 @@ func newMockRealtimeServerWithCounter(t *testing.T, validAPIKey string, connecti
 
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if got := r.Header.Get("Authorization"); got != "bearer "+validAPIKey {
+			w.Header().Set("X-Request-Id", "req_auth_1")
+			w.Header().Set("X-Log-Id", "log_auth_1")
+			w.Header().Set("X-Trace-Id", "trace_auth_1")
 			http.Error(w, "invalid api key", http.StatusUnauthorized)
 			return
 		}

@@ -45,6 +45,12 @@ type RealtimeEvent struct {
 
 	EventID string `json:"event_id,omitempty"`
 
+	RequestID string `json:"request_id,omitempty"`
+
+	LogID string `json:"log_id,omitempty"`
+
+	TraceID string `json:"trace_id,omitempty"`
+
 	Session *SessionInfo `json:"session,omitempty"`
 
 	Response *ResponseInfo `json:"response,omitempty"`
@@ -75,6 +81,9 @@ type RealtimeEvent struct {
 // ResponseInfo contains response status details.
 type ResponseInfo struct {
 	ID           string        `json:"id,omitempty"`
+	RequestID    string        `json:"request_id,omitempty"`
+	LogID        string        `json:"log_id,omitempty"`
+	TraceID      string        `json:"trace_id,omitempty"`
 	Status       string        `json:"status,omitempty"`
 	StatusDetail *StatusDetail `json:"status_detail,omitempty"`
 	Output       []OutputItem  `json:"output,omitempty"`
@@ -107,8 +116,11 @@ type ContentPart struct {
 
 // EventError is a realtime error payload.
 type EventError struct {
-	Type    string `json:"type,omitempty"`
-	Code    string `json:"code,omitempty"`
-	Message string `json:"message,omitempty"`
-	Param   string `json:"param,omitempty"`
+	Type      string `json:"type,omitempty"`
+	Code      string `json:"code,omitempty"`
+	Message   string `json:"message,omitempty"`
+	Param     string `json:"param,omitempty"`
+	RequestID string `json:"request_id,omitempty"`
+	LogID     string `json:"log_id,omitempty"`
+	TraceID   string `json:"trace_id,omitempty"`
 }

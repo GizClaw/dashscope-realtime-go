@@ -12,6 +12,9 @@ func DecodeServerEvent(message []byte) (*WireEvent, error) {
 	event := &WireEvent{}
 	_ = unmarshalString(raw["type"], &event.Type)
 	_ = unmarshalString(raw["event_id"], &event.EventID)
+	_ = unmarshalString(raw["request_id"], &event.RequestID)
+	_ = unmarshalString(raw["log_id"], &event.LogID)
+	_ = unmarshalString(raw["trace_id"], &event.TraceID)
 	_ = unmarshalString(raw["response_id"], &event.ResponseID)
 	_ = unmarshalString(raw["item_id"], &event.ItemID)
 	_ = unmarshalInt(raw["output_index"], &event.OutputIndex)
@@ -19,6 +22,11 @@ func DecodeServerEvent(message []byte) (*WireEvent, error) {
 
 	if choicesRaw, ok := raw["choices"]; ok {
 		if parsed := decodeChoices(choicesRaw); parsed != nil {
+			parsed.EventID = event.EventID
+			parsed.RequestID = event.RequestID
+			parsed.LogID = event.LogID
+			parsed.TraceID = event.TraceID
+			parsed.ResponseID = event.ResponseID
 			return parsed, nil
 		}
 	}

@@ -68,6 +68,9 @@ func convertWireEvent(w *internalproto.WireEvent) *RealtimeEvent {
 	event := &RealtimeEvent{
 		Type:         w.Type,
 		EventID:      w.EventID,
+		RequestID:    w.RequestID,
+		LogID:        w.LogID,
+		TraceID:      w.TraceID,
 		ResponseID:   w.ResponseID,
 		ItemID:       w.ItemID,
 		OutputIndex:  w.OutputIndex,
@@ -102,6 +105,15 @@ func convertWireEvent(w *internalproto.WireEvent) *RealtimeEvent {
 
 	if w.Response != nil {
 		event.Response = convertResponseInfo(w.Response)
+		if event.RequestID == "" {
+			event.RequestID = w.Response.RequestID
+		}
+		if event.LogID == "" {
+			event.LogID = w.Response.LogID
+		}
+		if event.TraceID == "" {
+			event.TraceID = w.Response.TraceID
+		}
 		if event.ResponseID == "" {
 			event.ResponseID = event.Response.ID
 		}
@@ -143,10 +155,22 @@ func convertWireEvent(w *internalproto.WireEvent) *RealtimeEvent {
 
 	if w.Error != nil {
 		event.Error = &EventError{
-			Type:    w.Error.Type,
-			Code:    w.Error.Code,
-			Message: w.Error.Message,
-			Param:   w.Error.Param,
+			Type:      w.Error.Type,
+			Code:      w.Error.Code,
+			Message:   w.Error.Message,
+			Param:     w.Error.Param,
+			RequestID: w.Error.RequestID,
+			LogID:     w.Error.LogID,
+			TraceID:   w.Error.TraceID,
+		}
+		if event.RequestID == "" {
+			event.RequestID = w.Error.RequestID
+		}
+		if event.LogID == "" {
+			event.LogID = w.Error.LogID
+		}
+		if event.TraceID == "" {
+			event.TraceID = w.Error.TraceID
 		}
 	}
 
@@ -165,8 +189,11 @@ func convertResponseInfo(in *internalproto.ResponseData) *ResponseInfo {
 	}
 
 	out := &ResponseInfo{
-		ID:     in.ID,
-		Status: in.Status,
+		ID:        in.ID,
+		RequestID: in.RequestID,
+		LogID:     in.LogID,
+		TraceID:   in.TraceID,
+		Status:    in.Status,
 	}
 
 	if in.StatusDetail != nil {
@@ -176,8 +203,11 @@ func convertResponseInfo(in *internalproto.ResponseData) *ResponseInfo {
 		}
 		if in.StatusDetail.Error != nil {
 			out.StatusDetail.Error = &Error{
-				Code:    in.StatusDetail.Error.Code,
-				Message: in.StatusDetail.Error.Message,
+				Code:      in.StatusDetail.Error.Code,
+				Message:   in.StatusDetail.Error.Message,
+				RequestID: in.StatusDetail.Error.RequestID,
+				LogID:     in.StatusDetail.Error.LogID,
+				TraceID:   in.StatusDetail.Error.TraceID,
 			}
 		}
 	}

@@ -3,6 +3,7 @@ package dashscope
 import (
 	"errors"
 	"fmt"
+	"strings"
 )
 
 const (
@@ -37,6 +38,8 @@ type Error struct {
 	Code       string `json:"code"`
 	Message    string `json:"message"`
 	RequestID  string `json:"request_id,omitempty"`
+	LogID      string `json:"log_id,omitempty"`
+	TraceID    string `json:"trace_id,omitempty"`
 	HTTPStatus int    `json:"-"`
 }
 
@@ -44,12 +47,20 @@ func (e *Error) Error() string {
 	if e == nil {
 		return "<nil>"
 	}
+
+	details := make([]string, 0, 4)
 	if e.RequestID != "" {
-		return fmt.Sprintf("dashscope: %s - %s (request_id=%s, http_status=%d)",
-			e.Code, e.Message, e.RequestID, e.HTTPStatus)
+		details = append(details, "request_id="+e.RequestID)
 	}
-	return fmt.Sprintf("dashscope: %s - %s (http_status=%d)",
-		e.Code, e.Message, e.HTTPStatus)
+	if e.LogID != "" {
+		details = append(details, "log_id="+e.LogID)
+	}
+	if e.TraceID != "" {
+		details = append(details, "trace_id="+e.TraceID)
+	}
+	details = append(details, fmt.Sprintf("http_status=%d", e.HTTPStatus))
+
+	return fmt.Sprintf("dashscope: %s - %s (%s)", e.Code, e.Message, strings.Join(details, ", "))
 }
 
 // IsRateLimit checks whether the error is rate-limit related.

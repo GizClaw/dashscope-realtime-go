@@ -3,6 +3,7 @@ package dashscope
 import (
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"iter"
@@ -42,6 +43,12 @@ type RealtimeSession struct {
 type eventOrError struct {
 	event *RealtimeEvent
 	err   error
+}
+
+type debugIDs struct {
+	RequestID string
+	LogID     string
+	TraceID   string
 }
 
 // Connect opens a realtime session.
@@ -422,14 +429,118 @@ func mapConnectError(err error) error {
 		status = http.StatusServiceUnavailable
 	}
 
+	ids := extractDebugIDsFromHeaders(connectErr.Headers)
+	code := mapHTTPStatusToErrorCode(status)
 	message := strings.TrimSpace(connectErr.Body)
+	if parsedCode, parsedMessage, bodyIDs, ok := parseErrorBody(message); ok {
+		if parsedCode != "" {
+			code = parsedCode
+		}
+		if parsedMessage != "" {
+			message = parsedMessage
+		}
+		ids = mergeDebugIDs(ids, bodyIDs)
+	}
 	if message == "" {
 		message = connectErr.Error()
 	}
 
 	return &Error{
-		Code:       mapHTTPStatusToErrorCode(status),
+		Code:       code,
 		Message:    message,
+		RequestID:  ids.RequestID,
+		LogID:      ids.LogID,
+		TraceID:    ids.TraceID,
 		HTTPStatus: status,
 	}
+}
+
+type errorResponseBody struct {
+	Code      string             `json:"code,omitempty"`
+	Message   string             `json:"message,omitempty"`
+	RequestID string             `json:"request_id,omitempty"`
+	LogID     string             `json:"log_id,omitempty"`
+	TraceID   string             `json:"trace_id,omitempty"`
+	Error     *errorResponseBody `json:"error,omitempty"`
+}
+
+func parseErrorBody(body string) (string, string, debugIDs, bool) {
+	if strings.TrimSpace(body) == "" {
+		return "", "", debugIDs{}, false
+	}
+
+	var parsed errorResponseBody
+	if err := json.Unmarshal([]byte(body), &parsed); err != nil {
+		return "", "", debugIDs{}, false
+	}
+
+	code := parsed.Code
+	message := parsed.Message
+	ids := debugIDs{
+		RequestID: parsed.RequestID,
+		LogID:     parsed.LogID,
+		TraceID:   parsed.TraceID,
+	}
+
+	if parsed.Error != nil {
+		if code == "" {
+			code = parsed.Error.Code
+		}
+		if message == "" {
+			message = parsed.Error.Message
+		}
+		ids = mergeDebugIDs(ids, debugIDs{
+			RequestID: parsed.Error.RequestID,
+			LogID:     parsed.Error.LogID,
+			TraceID:   parsed.Error.TraceID,
+		})
+	}
+
+	return code, message, ids, code != "" || message != "" || ids.RequestID != "" || ids.LogID != "" || ids.TraceID != ""
+}
+
+func extractDebugIDsFromHeaders(headers http.Header) debugIDs {
+	return debugIDs{
+		RequestID: firstHeader(headers,
+			"X-Request-Id",
+			"X-DashScope-Request-Id",
+			"X-Dashscope-Request-Id",
+			"X-Acs-Request-Id",
+			"Request-Id",
+		),
+		LogID: firstHeader(headers,
+			"X-Log-Id",
+			"X-DashScope-Log-Id",
+			"X-Dashscope-Log-Id",
+			"Log-Id",
+		),
+		TraceID: firstHeader(headers,
+			"X-Trace-Id",
+			"X-DashScope-Trace-Id",
+			"X-Dashscope-Trace-Id",
+			"Trace-Id",
+		),
+	}
+}
+
+func firstHeader(headers http.Header, names ...string) string {
+	for _, name := range names {
+		if value := strings.TrimSpace(headers.Get(name)); value != "" {
+			return value
+		}
+	}
+	return ""
+}
+
+func mergeDebugIDs(primary, fallback debugIDs) debugIDs {
+	if primary.RequestID == "" {
+		primary.RequestID = fallback.RequestID
+	}
+	if primary.LogID == "" {
+		primary.LogID = fallback.LogID
+	}
+	if primary.TraceID == "" {
+		primary.TraceID = fallback.TraceID
+	}
+	return primary
 }
