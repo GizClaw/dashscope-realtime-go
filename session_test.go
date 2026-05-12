@@ -48,15 +48,15 @@ func TestRealtimeSessionTextPath(t *testing.T) {
 		t.Fatalf("CreateResponse() error = %v", err)
 	}
 
-	var gotDelta string
+	var gotDelta strings.Builder
 	for {
 		event := waitEvent(t, events, errs, 2*time.Second)
 		switch event.Type {
 		case EventTypeResponseTextDelta:
-			gotDelta += event.Delta
+			gotDelta.WriteString(event.Delta)
 		case EventTypeResponseDone:
-			if !strings.Contains(gotDelta, "你好") {
-				t.Fatalf("response delta = %q, want contains %q", gotDelta, "你好")
+			if !strings.Contains(gotDelta.String(), "你好") {
+				t.Fatalf("response delta = %q, want contains %q", gotDelta.String(), "你好")
 			}
 			return
 		}

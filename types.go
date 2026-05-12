@@ -77,7 +77,7 @@ type SessionInfo struct {
 	TurnDetection     *TurnDetection `json:"turn_detection,omitempty"`
 	Instructions      string         `json:"instructions,omitempty"`
 	Temperature       float64        `json:"temperature,omitempty"`
-	MaxOutputTokens   interface{}    `json:"max_output_tokens,omitempty"`
+	MaxOutputTokens   any            `json:"max_output_tokens,omitempty"`
 }
 
 // TranscriptItem represents a transcript segment.

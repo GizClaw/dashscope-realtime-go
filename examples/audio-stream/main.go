@@ -298,10 +298,7 @@ func sendAudioInChunks(session *dashscope.RealtimeSession, audio []byte, useBase
 	const chunkSize = 3200 // 100ms @ 16kHz pcm16 mono
 	first := true
 	for i := 0; i < len(audio); i += chunkSize {
-		end := i + chunkSize
-		if end > len(audio) {
-			end = len(audio)
-		}
+		end := min(i+chunkSize, len(audio))
 		chunk := audio[i:end]
 		var err error
 		if useBase64First && first {
