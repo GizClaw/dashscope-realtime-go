@@ -131,6 +131,27 @@ func (s *RealtimeSession) UpdateSession(config *SessionConfig) error {
 		MaxOutputTokens:   config.MaxOutputTokens,
 	}
 
+	if config.Tools != nil {
+		tools := make([]internalproto.FunctionToolPayload, 0, len(config.Tools))
+		for _, tool := range config.Tools {
+			if tool.Type != ToolTypeFunction {
+				return newInvalidParameterError("tool type must be function")
+			}
+			if strings.TrimSpace(tool.Function.Name) == "" {
+				return newInvalidParameterError("function name cannot be empty")
+			}
+			tools = append(tools, internalproto.FunctionToolPayload{
+				Type: ToolTypeFunction,
+				Function: internalproto.FunctionDefinitionPayload{
+					Name:        strings.TrimSpace(tool.Function.Name),
+					Description: tool.Function.Description,
+					Parameters:  toProtocolJSONSchema(tool.Function.Parameters),
+				},
+			})
+		}
+		payload.Tools = &tools
+	}
+
 	if config.EnableInputAudioTranscription {
 		payload.InputAudioTranscription = &internalproto.InputAudioTranscriptionPayload{
 			Model: strings.TrimSpace(config.InputAudioTranscriptionModel),
@@ -235,6 +256,52 @@ func (s *RealtimeSession) CreateResponse(opts *ResponseCreateOptions) error {
 
 	event := internalproto.ResponseCreateEvent(generateEventID(), payload)
 	return s.sendEvent(context.Background(), event)
+}
+
+// SubmitFunctionCallOutput adds a function result to the conversation.
+// Call CreateResponse after submitting the result to continue inference.
+func (s *RealtimeSession) SubmitFunctionCallOutput(callID, output string) error {
+	if strings.TrimSpace(callID) == "" {
+		return newInvalidParameterError("function call ID cannot be empty")
+	}
+
+	event := internalproto.ConversationItemCreateFunctionOutputEvent(generateEventID(), internalproto.FunctionCallOutputPayload{
+		Type:   "function_call_output",
+		CallID: callID,
+		Output: output,
+	})
+	return s.sendEvent(context.Background(), event)
+}
+
+func toProtocolJSONSchema(schema *JSONSchema) *internalproto.JSONSchemaPayload {
+	if schema == nil {
+		return nil
+	}
+	out := &internalproto.JSONSchemaPayload{
+		Type:                 schema.Type,
+		Description:          schema.Description,
+		Required:             append([]string(nil), schema.Required...),
+		AdditionalProperties: schema.AdditionalProperties,
+		Items:                toProtocolJSONSchema(schema.Items),
+		Enum:                 append([]any(nil), schema.Enum...),
+		MinLength:            schema.MinLength,
+		MaxLength:            schema.MaxLength,
+		Minimum:              schema.Minimum,
+		Maximum:              schema.Maximum,
+	}
+	if len(schema.Properties) > 0 {
+		out.Properties = make(map[string]*internalproto.JSONSchemaPayload, len(schema.Properties))
+		for name, property := range schema.Properties {
+			out.Properties[name] = toProtocolJSONSchema(property)
+		}
+	}
+	if len(schema.AnyOf) > 0 {
+		out.AnyOf = make([]*internalproto.JSONSchemaPayload, len(schema.AnyOf))
+		for i, variant := range schema.AnyOf {
+			out.AnyOf[i] = toProtocolJSONSchema(variant)
+		}
+	}
+	return out
 }
 
 // CancelResponse sends response.cancel event.

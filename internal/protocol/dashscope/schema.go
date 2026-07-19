@@ -13,6 +13,39 @@ type SessionUpdatePayload struct {
 
 	InputAudioTranscription *InputAudioTranscriptionPayload `json:"input_audio_transcription,omitempty"`
 	TurnDetection           *TurnDetectionPayload           `json:"turn_detection,omitempty"`
+	Tools                   *[]FunctionToolPayload          `json:"tools,omitempty"`
+}
+
+type FunctionToolPayload struct {
+	Type     string                    `json:"type"`
+	Function FunctionDefinitionPayload `json:"function"`
+}
+
+type FunctionDefinitionPayload struct {
+	Name        string             `json:"name"`
+	Description string             `json:"description,omitempty"`
+	Parameters  *JSONSchemaPayload `json:"parameters,omitempty"`
+}
+
+type JSONSchemaPayload struct {
+	Type                 string                        `json:"type,omitempty"`
+	Description          string                        `json:"description,omitempty"`
+	Properties           map[string]*JSONSchemaPayload `json:"properties,omitempty"`
+	Required             []string                      `json:"required,omitempty"`
+	AdditionalProperties *bool                         `json:"additionalProperties,omitempty"`
+	Items                *JSONSchemaPayload            `json:"items,omitempty"`
+	Enum                 []any                         `json:"enum,omitempty"`
+	MinLength            *int                          `json:"minLength,omitempty"`
+	MaxLength            *int                          `json:"maxLength,omitempty"`
+	Minimum              *float64                      `json:"minimum,omitempty"`
+	Maximum              *float64                      `json:"maximum,omitempty"`
+	AnyOf                []*JSONSchemaPayload          `json:"anyOf,omitempty"`
+}
+
+type FunctionCallOutputPayload struct {
+	Type   string `json:"type"`
+	CallID string `json:"call_id"`
+	Output string `json:"output"`
 }
 
 // InputAudioTranscriptionPayload configures transcription model.
@@ -58,6 +91,7 @@ type SessionData struct {
 	Instructions      string                `json:"instructions,omitempty"`
 	Temperature       float64               `json:"temperature,omitempty"`
 	MaxOutputTokens   any                   `json:"max_output_tokens,omitempty"`
+	Tools             []FunctionToolPayload `json:"tools,omitempty"`
 }
 
 // UsageData is token usage payload.
@@ -88,11 +122,14 @@ type StatusDetailData struct {
 
 // OutputItemData is one output item in response payload.
 type OutputItemData struct {
-	ID      string            `json:"id,omitempty"`
-	Type    string            `json:"type,omitempty"`
-	Role    string            `json:"role,omitempty"`
-	Status  string            `json:"status,omitempty"`
-	Content []ContentPartData `json:"content,omitempty"`
+	ID        string            `json:"id,omitempty"`
+	Type      string            `json:"type,omitempty"`
+	Role      string            `json:"role,omitempty"`
+	Status    string            `json:"status,omitempty"`
+	Content   []ContentPartData `json:"content,omitempty"`
+	CallID    string            `json:"call_id,omitempty"`
+	Name      string            `json:"name,omitempty"`
+	Arguments string            `json:"arguments,omitempty"`
 }
 
 // ContentPartData is one output content part payload.
@@ -129,6 +166,9 @@ type WireEvent struct {
 	ItemID       string
 	OutputIndex  int
 	ContentIndex int
+	CallID       string
+	Name         string
+	Arguments    string
 	Delta        string
 	AudioBase64  string
 	Transcript   string

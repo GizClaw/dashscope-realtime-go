@@ -14,26 +14,28 @@ const (
 	EventTypeTranscriptionUpdate = "transcription.update"
 
 	// Server events.
-	EventTypeSessionCreated                   = "session.created"
-	EventTypeSessionUpdated                   = "session.updated"
-	EventTypeInputAudioCommitted              = "input_audio_buffer.committed"
-	EventTypeInputAudioCleared                = "input_audio_buffer.cleared"
-	EventTypeInputSpeechStarted               = "input_audio_buffer.speech_started"
-	EventTypeInputSpeechStopped               = "input_audio_buffer.speech_stopped"
-	EventTypeResponseCreated                  = "response.created"
-	EventTypeResponseDone                     = "response.done"
-	EventTypeResponseOutputAdded              = "response.output_item.added"
-	EventTypeResponseOutputDone               = "response.output_item.done"
-	EventTypeResponseContentAdded             = "response.content_part.added"
-	EventTypeResponseContentDone              = "response.content_part.done"
-	EventTypeResponseTextDelta                = "response.text.delta"
-	EventTypeResponseTextDone                 = "response.text.done"
-	EventTypeResponseAudioDelta               = "response.audio.delta"
-	EventTypeResponseAudioDone                = "response.audio.done"
-	EventTypeResponseTranscriptDelta          = "response.audio_transcript.delta"
-	EventTypeResponseTranscriptDone           = "response.audio_transcript.done"
-	EventTypeInputAudioTranscriptionCompleted = "conversation.item.input_audio_transcription.completed"
-	EventTypeError                            = "error"
+	EventTypeSessionCreated                     = "session.created"
+	EventTypeSessionUpdated                     = "session.updated"
+	EventTypeInputAudioCommitted                = "input_audio_buffer.committed"
+	EventTypeInputAudioCleared                  = "input_audio_buffer.cleared"
+	EventTypeInputSpeechStarted                 = "input_audio_buffer.speech_started"
+	EventTypeInputSpeechStopped                 = "input_audio_buffer.speech_stopped"
+	EventTypeResponseCreated                    = "response.created"
+	EventTypeResponseDone                       = "response.done"
+	EventTypeResponseOutputAdded                = "response.output_item.added"
+	EventTypeResponseOutputDone                 = "response.output_item.done"
+	EventTypeResponseContentAdded               = "response.content_part.added"
+	EventTypeResponseContentDone                = "response.content_part.done"
+	EventTypeResponseTextDelta                  = "response.text.delta"
+	EventTypeResponseTextDone                   = "response.text.done"
+	EventTypeResponseAudioDelta                 = "response.audio.delta"
+	EventTypeResponseAudioDone                  = "response.audio.done"
+	EventTypeResponseTranscriptDelta            = "response.audio_transcript.delta"
+	EventTypeResponseTranscriptDone             = "response.audio_transcript.done"
+	EventTypeResponseFunctionCallArgumentsDelta = "response.function_call_arguments.delta"
+	EventTypeResponseFunctionCallArgumentsDone  = "response.function_call_arguments.done"
+	EventTypeInputAudioTranscriptionCompleted   = "conversation.item.input_audio_transcription.completed"
+	EventTypeError                              = "error"
 
 	// DashScope-specific compact response format.
 	EventTypeChoicesResponse = "choices"
@@ -73,6 +75,10 @@ type RealtimeEvent struct {
 
 	ContentIndex int `json:"content_index,omitempty"`
 
+	CallID    string `json:"call_id,omitempty"`
+	Name      string `json:"name,omitempty"`
+	Arguments string `json:"arguments,omitempty"`
+
 	Error *EventError `json:"error,omitempty"`
 
 	Usage *UsageStats `json:"usage,omitempty"`
@@ -99,11 +105,14 @@ type StatusDetail struct {
 
 // OutputItem is one output unit in a response.
 type OutputItem struct {
-	ID      string        `json:"id,omitempty"`
-	Type    string        `json:"type,omitempty"`
-	Role    string        `json:"role,omitempty"`
-	Status  string        `json:"status,omitempty"`
-	Content []ContentPart `json:"content,omitempty"`
+	ID        string        `json:"id,omitempty"`
+	Type      string        `json:"type,omitempty"`
+	Role      string        `json:"role,omitempty"`
+	Status    string        `json:"status,omitempty"`
+	Content   []ContentPart `json:"content,omitempty"`
+	CallID    string        `json:"call_id,omitempty"`
+	Name      string        `json:"name,omitempty"`
+	Arguments string        `json:"arguments,omitempty"`
 }
 
 // ContentPart is one output content part.
