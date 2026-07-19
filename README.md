@@ -107,8 +107,10 @@ go run ./examples/audio-stream -rounds 1
 ### Function Calling
 
 ```bash
-go run ./examples/function-calling
+go run ./examples/function-calling -audio question.pcm
 ```
+
+The input file must contain a spoken question as 16 kHz mono PCM16 audio. `DASHSCOPE_AUDIO_FILE` may be used instead of `-audio`.
 
 Function Calling is supported by the Qwen3.5 Omni Realtime model families. It is not supported by Qwen3 Omni Flash Realtime or legacy Qwen Omni Turbo Realtime models. The provider does not support `tool_choice` or `parallel_tool_calls` for Qwen Omni Realtime, and Function Calling cannot be enabled together with provider web search.
 
