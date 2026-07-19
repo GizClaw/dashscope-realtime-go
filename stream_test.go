@@ -113,3 +113,62 @@ func TestConvertWireEventMapsDebugIDs(t *testing.T) {
 		t.Fatalf("event.Response.StatusDetail.Error.RequestID = %q, want %q", event.Response.StatusDetail.Error.RequestID, "req_status")
 	}
 }
+
+func TestConvertWireEventMapsFunctionCall(t *testing.T) {
+	wire := &internalproto.WireEvent{
+		Type:        EventTypeResponseFunctionCallArgumentsDone,
+		ResponseID:  "resp_1",
+		ItemID:      "item_1",
+		OutputIndex: 1,
+		CallID:      "call_1",
+		Name:        "lookup_weather",
+		Arguments:   ` {"city":"杭州"}`,
+		Item: &internalproto.OutputItemData{
+			ID:        "item_1",
+			Type:      "function_call",
+			CallID:    "call_1",
+			Name:      "lookup_weather",
+			Arguments: `{"city":"杭州"}`,
+		},
+	}
+	event := convertWireEvent(wire)
+	if event.CallID != wire.CallID || event.Name != wire.Name || event.Arguments != wire.Arguments {
+		t.Fatalf("function event = %#v", event)
+	}
+	if event.Response == nil || len(event.Response.Output) != 1 {
+		t.Fatalf("event.Response = %#v", event.Response)
+	}
+	item := event.Response.Output[0]
+	if item.CallID != "call_1" || item.Name != "lookup_weather" || item.Arguments != `{"city":"杭州"}` {
+		t.Fatalf("function output item = %#v", item)
+	}
+}
+
+func TestConvertWireEventMapsSessionTools(t *testing.T) {
+	wire := &internalproto.WireEvent{
+		Type: EventTypeSessionUpdated,
+		Session: &internalproto.SessionData{
+			ID: "sess_1",
+			Tools: []internalproto.FunctionToolPayload{{
+				Type: ToolTypeFunction,
+				Function: internalproto.FunctionDefinitionPayload{
+					Name: "lookup_weather",
+					Parameters: &internalproto.JSONSchemaPayload{
+						Type: "object",
+						Properties: map[string]*internalproto.JSONSchemaPayload{
+							"city": {Type: "string", Enum: []any{"杭州", nil}},
+						},
+					},
+				},
+			}},
+		},
+	}
+	event := convertWireEvent(wire)
+	if event.Session == nil || len(event.Session.Tools) != 1 {
+		t.Fatalf("event.Session = %#v", event.Session)
+	}
+	parameters := event.Session.Tools[0].Function.Parameters
+	if parameters == nil || len(parameters.Properties["city"].Enum) != 2 || parameters.Properties["city"].Enum[1] != nil {
+		t.Fatalf("parameters = %#v", parameters)
+	}
+}

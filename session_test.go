@@ -87,6 +87,119 @@ func TestRealtimeSessionEmptyInputValidation(t *testing.T) {
 	} else if apiErr, ok := AsError(err); !ok || apiErr.Code != ErrCodeInvalidParameter {
 		t.Fatalf("AppendAudio error = %v, want InvalidParameter", err)
 	}
+
+	if err := session.UpdateSession(&SessionConfig{Tools: []FunctionTool{{
+		Type:     "custom",
+		Function: FunctionDefinition{Name: "lookup_weather"},
+	}}}); err == nil {
+		t.Fatal("UpdateSession() expected invalid tool type error, got nil")
+	}
+	if err := session.UpdateSession(&SessionConfig{Tools: []FunctionTool{{
+		Type:     ToolTypeFunction,
+		Function: FunctionDefinition{Name: "  "},
+	}}}); err == nil {
+		t.Fatal("UpdateSession() expected empty function name error, got nil")
+	}
+	if err := session.SubmitFunctionCallOutput("  ", "result"); err == nil {
+		t.Fatal("SubmitFunctionCallOutput() expected empty call ID error, got nil")
+	}
+}
+
+func TestRealtimeSessionFunctionCallingWireFlow(t *testing.T) {
+	requests := make(chan map[string]any, 4)
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		conn, err := coderws.Accept(w, r, nil)
+		if err != nil {
+			t.Errorf("websocket accept: %v", err)
+			return
+		}
+		defer conn.Close(coderws.StatusNormalClosure, "done")
+		ctx := context.Background()
+		if err := wsjson.Write(ctx, conn, map[string]any{
+			"type":    "session.created",
+			"session": map[string]any{"id": "sess_function_1"},
+		}); err != nil {
+			t.Errorf("send session.created: %v", err)
+			return
+		}
+		for {
+			var req map[string]any
+			if err := wsjson.Read(ctx, conn, &req); err != nil {
+				return
+			}
+			requests <- req
+		}
+	}))
+	t.Cleanup(server.Close)
+
+	client := NewClient("valid-key", WithBaseURL(toWSURL(server.URL)))
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	session, err := client.Realtime.Connect(ctx, &RealtimeConfig{Model: ModelQwen35OmniFlashRealtime})
+	if err != nil {
+		t.Fatalf("Connect() error = %v", err)
+	}
+	defer session.Close()
+	events, errs := startEventReader(session)
+	_ = waitEvent(t, events, errs, 2*time.Second)
+
+	additionalProperties := false
+	if err := session.UpdateSession(&SessionConfig{Tools: []FunctionTool{{
+		Type: ToolTypeFunction,
+		Function: FunctionDefinition{
+			Name: "lookup_weather",
+			Parameters: &JSONSchema{
+				Type:                 "object",
+				Properties:           map[string]*JSONSchema{"city": {Type: "string"}},
+				Required:             []string{"city"},
+				AdditionalProperties: &additionalProperties,
+			},
+		},
+	}}}); err != nil {
+		t.Fatalf("UpdateSession() error = %v", err)
+	}
+	update := waitRequest(t, requests)
+	tools := update["session"].(map[string]any)["tools"].([]any)
+	if len(tools) != 1 {
+		t.Fatalf("tools = %#v, want one tool", tools)
+	}
+
+	output := "  {\"temperature\":25}\n"
+	if err := session.SubmitFunctionCallOutput(" call_1 ", output); err != nil {
+		t.Fatalf("SubmitFunctionCallOutput() error = %v", err)
+	}
+	result := waitRequest(t, requests)
+	if result["type"] != "conversation.item.create" {
+		t.Fatalf("result type = %#v", result["type"])
+	}
+	item := result["item"].(map[string]any)
+	if item["call_id"] != " call_1 " || item["output"] != output {
+		t.Fatalf("function result item = %#v", item)
+	}
+	select {
+	case unexpected := <-requests:
+		t.Fatalf("SubmitFunctionCallOutput() sent implicit event: %#v", unexpected)
+	case <-time.After(100 * time.Millisecond):
+	}
+
+	if err := session.CreateResponse(nil); err != nil {
+		t.Fatalf("CreateResponse() error = %v", err)
+	}
+	response := waitRequest(t, requests)
+	if response["type"] != EventTypeResponseCreate {
+		t.Fatalf("response type = %#v", response["type"])
+	}
+}
+
+func waitRequest(t *testing.T, requests <-chan map[string]any) map[string]any {
+	t.Helper()
+	select {
+	case request := <-requests:
+		return request
+	case <-time.After(2 * time.Second):
+		t.Fatal("timeout waiting for client request")
+		return nil
+	}
 }
 
 func TestRealtimeSessionAuthFailure(t *testing.T) {

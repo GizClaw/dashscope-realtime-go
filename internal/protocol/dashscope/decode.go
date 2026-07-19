@@ -19,6 +19,9 @@ func DecodeServerEvent(message []byte) (*WireEvent, error) {
 	_ = unmarshalString(raw["item_id"], &event.ItemID)
 	_ = unmarshalInt(raw["output_index"], &event.OutputIndex)
 	_ = unmarshalInt(raw["content_index"], &event.ContentIndex)
+	_ = unmarshalString(raw["call_id"], &event.CallID)
+	_ = unmarshalString(raw["name"], &event.Name)
+	_ = unmarshalString(raw["arguments"], &event.Arguments)
 
 	if choicesRaw, ok := raw["choices"]; ok {
 		if parsed := decodeChoices(choicesRaw); parsed != nil {

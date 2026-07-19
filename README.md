@@ -6,7 +6,7 @@
 
 A lightweight Go SDK for the DashScope Realtime API.
 
-This repository focuses on realtime capabilities only (text/audio streaming) and keeps a simple public API in the root package, with protocol and transport details isolated internally.
+This repository focuses on realtime capabilities only (text/audio streaming and typed Function Calling) and keeps a simple public API in the root package, with protocol and transport details isolated internally.
 
 ---
 
@@ -103,6 +103,30 @@ go run ./examples/text-chat -rounds 1 -prompt "Hello"
 ```bash
 go run ./examples/audio-stream -rounds 1
 ```
+
+### Function Calling
+
+```bash
+go run ./examples/function-calling
+```
+
+Function Calling is supported by the Qwen3.5 Omni Realtime model families. It is not supported by Qwen3 Omni Flash Realtime or legacy Qwen Omni Turbo Realtime models. The provider does not support `tool_choice` or `parallel_tool_calls` for Qwen Omni Realtime, and Function Calling cannot be enabled together with provider web search.
+
+Register tools through `SessionConfig.Tools`. Execute calls only after receiving `EventTypeResponseFunctionCallArgumentsDone`, submit the matching result, then explicitly create the follow-up response:
+
+```go
+if event.Type == dashscope.EventTypeResponseFunctionCallArgumentsDone {
+    result := `{"ok":true}`
+    if err := session.SubmitFunctionCallOutput(event.CallID, result); err != nil {
+        return err
+    }
+    if err := session.CreateResponse(nil); err != nil {
+        return err
+    }
+}
+```
+
+The SDK transports declarations, calls, and results. The application remains responsible for tool lookup, authorization, execution, retries, and result generation. `SendRaw` remains available for protocol fields not yet exposed as typed API.
 
 Useful environment variables:
 

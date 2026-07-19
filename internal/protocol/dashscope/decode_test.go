@@ -207,3 +207,75 @@ func TestDecodeServerEventResponseField(t *testing.T) {
 		t.Fatalf("len(event.Response.Output) = %d, want 1", got)
 	}
 }
+
+func TestDecodeServerEventFunctionCallArgumentsDone(t *testing.T) {
+	input := []byte(`{
+		"type":"response.function_call_arguments.done",
+		"response_id":"resp_1",
+		"item_id":"item_1",
+		"output_index":2,
+		"call_id":"call_1",
+		"name":"lookup_weather",
+		"arguments":" {\"city\":\"杭州\"}"
+	}`)
+	event, err := DecodeServerEvent(input)
+	if err != nil {
+		t.Fatalf("DecodeServerEvent() error = %v", err)
+	}
+	if event.ResponseID != "resp_1" || event.ItemID != "item_1" || event.OutputIndex != 2 {
+		t.Fatalf("correlation fields = %#v", event)
+	}
+	if event.CallID != "call_1" || event.Name != "lookup_weather" || event.Arguments != ` {"city":"杭州"}` {
+		t.Fatalf("function fields = %#v", event)
+	}
+}
+
+func TestDecodeServerEventFunctionCallOutputItem(t *testing.T) {
+	input := []byte(`{
+		"type":"response.output_item.done",
+		"response_id":"resp_1",
+		"output_index":1,
+		"item":{
+			"id":"item_1",
+			"type":"function_call",
+			"status":"completed",
+			"call_id":"call_1",
+			"name":"lookup_weather",
+			"arguments":"{\"city\":\"杭州\"}"
+		}
+	}`)
+	event, err := DecodeServerEvent(input)
+	if err != nil {
+		t.Fatalf("DecodeServerEvent() error = %v", err)
+	}
+	if event.Item == nil {
+		t.Fatal("event.Item is nil")
+	}
+	if event.Item.CallID != "call_1" || event.Item.Name != "lookup_weather" || event.Item.Arguments != `{"city":"杭州"}` {
+		t.Fatalf("function item = %#v", event.Item)
+	}
+}
+
+func TestDecodeServerEventPreservesMixedResponseOutputOrder(t *testing.T) {
+	input := []byte(`{
+		"type":"response.done",
+		"response":{
+			"id":"resp_1",
+			"output":[
+				{"id":"item_message","type":"message","role":"assistant","content":[{"type":"text","text":"checking"}]},
+				{"id":"item_call_1","type":"function_call","call_id":"call_1","name":"first","arguments":"{}"},
+				{"id":"item_call_2","type":"function_call","call_id":"call_2","name":"second","arguments":"{\"value\":2}"}
+			]
+		}
+	}`)
+	event, err := DecodeServerEvent(input)
+	if err != nil {
+		t.Fatalf("DecodeServerEvent() error = %v", err)
+	}
+	if event.Response == nil || len(event.Response.Output) != 3 {
+		t.Fatalf("response output = %#v", event.Response)
+	}
+	if event.Response.Output[0].ID != "item_message" || event.Response.Output[1].CallID != "call_1" || event.Response.Output[2].CallID != "call_2" {
+		t.Fatalf("response output order = %#v", event.Response.Output)
+	}
+}

@@ -17,6 +17,15 @@ func SessionUpdateEvent(eventID string, payload SessionUpdatePayload) map[string
 	return event
 }
 
+// ConversationItemCreateFunctionOutputEvent builds a function result item.
+func ConversationItemCreateFunctionOutputEvent(eventID string, payload FunctionCallOutputPayload) map[string]any {
+	return map[string]any{
+		"event_id": eventID,
+		"type":     "conversation.item.create",
+		"item":     payload,
+	}
+}
+
 // InputAudioAppendEvent builds input_audio_buffer.append payload.
 func InputAudioAppendEvent(eventID, audioBase64 string) map[string]any {
 	return map[string]any{

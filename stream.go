@@ -75,6 +75,9 @@ func convertWireEvent(w *internalproto.WireEvent) *RealtimeEvent {
 		ItemID:       w.ItemID,
 		OutputIndex:  w.OutputIndex,
 		ContentIndex: w.ContentIndex,
+		CallID:       w.CallID,
+		Name:         w.Name,
+		Arguments:    w.Arguments,
 		Delta:        w.Delta,
 		AudioBase64:  w.AudioBase64,
 		Transcript:   w.Transcript,
@@ -92,6 +95,12 @@ func convertWireEvent(w *internalproto.WireEvent) *RealtimeEvent {
 			Instructions:      w.Session.Instructions,
 			Temperature:       w.Session.Temperature,
 			MaxOutputTokens:   w.Session.MaxOutputTokens,
+		}
+		if len(w.Session.Tools) > 0 {
+			event.Session.Tools = make([]FunctionTool, 0, len(w.Session.Tools))
+			for _, tool := range w.Session.Tools {
+				event.Session.Tools = append(event.Session.Tools, fromProtocolFunctionTool(tool))
+			}
 		}
 		if w.Session.TurnDetection != nil {
 			event.Session.TurnDetection = &TurnDetection{
@@ -237,10 +246,13 @@ func convertOutputItem(in *internalproto.OutputItemData) OutputItem {
 	}
 
 	out := OutputItem{
-		ID:     in.ID,
-		Type:   in.Type,
-		Role:   in.Role,
-		Status: in.Status,
+		ID:        in.ID,
+		Type:      in.Type,
+		Role:      in.Role,
+		Status:    in.Status,
+		CallID:    in.CallID,
+		Name:      in.Name,
+		Arguments: in.Arguments,
 	}
 
 	if len(in.Content) > 0 {
@@ -256,5 +268,47 @@ func convertOutputItem(in *internalproto.OutputItemData) OutputItem {
 		}
 	}
 
+	return out
+}
+
+func fromProtocolFunctionTool(in internalproto.FunctionToolPayload) FunctionTool {
+	return FunctionTool{
+		Type: in.Type,
+		Function: FunctionDefinition{
+			Name:        in.Function.Name,
+			Description: in.Function.Description,
+			Parameters:  fromProtocolJSONSchema(in.Function.Parameters),
+		},
+	}
+}
+
+func fromProtocolJSONSchema(in *internalproto.JSONSchemaPayload) *JSONSchema {
+	if in == nil {
+		return nil
+	}
+	out := &JSONSchema{
+		Type:                 in.Type,
+		Description:          in.Description,
+		Required:             append([]string(nil), in.Required...),
+		AdditionalProperties: in.AdditionalProperties,
+		Items:                fromProtocolJSONSchema(in.Items),
+		Enum:                 append([]any(nil), in.Enum...),
+		MinLength:            in.MinLength,
+		MaxLength:            in.MaxLength,
+		Minimum:              in.Minimum,
+		Maximum:              in.Maximum,
+	}
+	if len(in.Properties) > 0 {
+		out.Properties = make(map[string]*JSONSchema, len(in.Properties))
+		for name, property := range in.Properties {
+			out.Properties[name] = fromProtocolJSONSchema(property)
+		}
+	}
+	if len(in.AnyOf) > 0 {
+		out.AnyOf = make([]*JSONSchema, len(in.AnyOf))
+		for i, variant := range in.AnyOf {
+			out.AnyOf[i] = fromProtocolJSONSchema(variant)
+		}
+	}
 	return out
 }

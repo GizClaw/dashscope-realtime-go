@@ -2,11 +2,18 @@ package dashscope
 
 // Common models for DashScope Realtime API.
 const (
-	ModelQwenOmniTurboRealtime        = "qwen-omni-turbo-realtime"
-	ModelQwenOmniTurboRealtimeLatest  = "qwen-omni-turbo-realtime-latest"
-	ModelQwen3OmniFlashRealtime       = "qwen3-omni-flash-realtime"
-	ModelQwen3OmniFlashRealtimeLatest = "qwen3-omni-flash-realtime-latest"
+	ModelQwenOmniTurboRealtime           = "qwen-omni-turbo-realtime"
+	ModelQwenOmniTurboRealtimeLatest     = "qwen-omni-turbo-realtime-latest"
+	ModelQwen3OmniFlashRealtime          = "qwen3-omni-flash-realtime"
+	ModelQwen3OmniFlashRealtimeLatest    = "qwen3-omni-flash-realtime-latest"
+	ModelQwen35OmniPlusRealtime          = "qwen3.5-omni-plus-realtime"
+	ModelQwen35OmniPlusRealtime20260315  = "qwen3.5-omni-plus-realtime-2026-03-15"
+	ModelQwen35OmniFlashRealtime         = "qwen3.5-omni-flash-realtime"
+	ModelQwen35OmniFlashRealtime20260315 = "qwen3.5-omni-flash-realtime-2026-03-15"
 )
+
+// Function tool types supported by DashScope Realtime.
+const ToolTypeFunction = "function"
 
 // Audio formats supported by DashScope.
 const (
@@ -54,8 +61,38 @@ type SessionConfig struct {
 	Temperature     *float64 `json:"temperature,omitempty"`
 	MaxOutputTokens *int     `json:"max_output_tokens,omitempty"`
 
-	EnableInputAudioTranscription bool   `json:"enable_input_audio_transcription,omitempty"`
-	InputAudioTranscriptionModel  string `json:"input_audio_transcription_model,omitempty"`
+	EnableInputAudioTranscription bool           `json:"enable_input_audio_transcription,omitempty"`
+	InputAudioTranscriptionModel  string         `json:"input_audio_transcription_model,omitempty"`
+	Tools                         []FunctionTool `json:"tools,omitempty"`
+}
+
+// FunctionTool describes a function available to the realtime model.
+type FunctionTool struct {
+	Type     string             `json:"type"`
+	Function FunctionDefinition `json:"function"`
+}
+
+// FunctionDefinition describes a model-callable function.
+type FunctionDefinition struct {
+	Name        string      `json:"name"`
+	Description string      `json:"description,omitempty"`
+	Parameters  *JSONSchema `json:"parameters,omitempty"`
+}
+
+// JSONSchema models the JSON Schema subset supported for function parameters.
+type JSONSchema struct {
+	Type                 string                 `json:"type,omitempty"`
+	Description          string                 `json:"description,omitempty"`
+	Properties           map[string]*JSONSchema `json:"properties,omitempty"`
+	Required             []string               `json:"required,omitempty"`
+	AdditionalProperties *bool                  `json:"additionalProperties,omitempty"`
+	Items                *JSONSchema            `json:"items,omitempty"`
+	Enum                 []any                  `json:"enum,omitempty"`
+	MinLength            *int                   `json:"minLength,omitempty"`
+	MaxLength            *int                   `json:"maxLength,omitempty"`
+	Minimum              *float64               `json:"minimum,omitempty"`
+	Maximum              *float64               `json:"maximum,omitempty"`
+	AnyOf                []*JSONSchema          `json:"anyOf,omitempty"`
 }
 
 // TurnDetection configures server VAD parameters.
@@ -78,6 +115,7 @@ type SessionInfo struct {
 	Instructions      string         `json:"instructions,omitempty"`
 	Temperature       float64        `json:"temperature,omitempty"`
 	MaxOutputTokens   any            `json:"max_output_tokens,omitempty"`
+	Tools             []FunctionTool `json:"tools,omitempty"`
 }
 
 // TranscriptItem represents a transcript segment.
