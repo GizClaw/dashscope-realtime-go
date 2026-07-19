@@ -163,6 +163,10 @@ func TestRealtimeSessionFunctionCallingWireFlow(t *testing.T) {
 	if len(tools) != 1 {
 		t.Fatalf("tools = %#v, want one tool", tools)
 	}
+	function := tools[0].(map[string]any)["function"].(map[string]any)
+	if function["name"] != "lookup_weather" {
+		t.Fatalf("function name = %#v, want trimmed name", function["name"])
+	}
 
 	output := "  {\"temperature\":25}\n"
 	if err := session.SubmitFunctionCallOutput(" call_1 ", output); err != nil {
@@ -188,6 +192,61 @@ func TestRealtimeSessionFunctionCallingWireFlow(t *testing.T) {
 	response := waitRequest(t, requests)
 	if response["type"] != EventTypeResponseCreate {
 		t.Fatalf("response type = %#v", response["type"])
+	}
+}
+
+func TestRealtimeSessionUpdateToolsDistinguishesOmittedAndEmpty(t *testing.T) {
+	requests := make(chan map[string]any, 2)
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		conn, err := coderws.Accept(w, r, nil)
+		if err != nil {
+			t.Errorf("websocket accept: %v", err)
+			return
+		}
+		defer conn.Close(coderws.StatusNormalClosure, "done")
+		ctx := context.Background()
+		if err := wsjson.Write(ctx, conn, map[string]any{
+			"type": "session.created", "session": map[string]any{"id": "sess_tools"},
+		}); err != nil {
+			t.Errorf("send session.created: %v", err)
+			return
+		}
+		for {
+			var req map[string]any
+			if err := wsjson.Read(ctx, conn, &req); err != nil {
+				return
+			}
+			requests <- req
+		}
+	}))
+	t.Cleanup(server.Close)
+
+	client := NewClient("valid-key", WithBaseURL(toWSURL(server.URL)))
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	session, err := client.Realtime.Connect(ctx, &RealtimeConfig{})
+	if err != nil {
+		t.Fatalf("Connect() error = %v", err)
+	}
+	defer session.Close()
+	events, errs := startEventReader(session)
+	_ = waitEvent(t, events, errs, 2*time.Second)
+
+	if err := session.UpdateSession(&SessionConfig{}); err != nil {
+		t.Fatalf("UpdateSession(omitted tools) error = %v", err)
+	}
+	omitted := waitRequest(t, requests)["session"].(map[string]any)
+	if _, exists := omitted["tools"]; exists {
+		t.Fatalf("omitted tools payload = %#v, want no tools field", omitted)
+	}
+
+	if err := session.UpdateSession(&SessionConfig{Tools: []FunctionTool{}}); err != nil {
+		t.Fatalf("UpdateSession(empty tools) error = %v", err)
+	}
+	empty := waitRequest(t, requests)["session"].(map[string]any)
+	tools, exists := empty["tools"]
+	if !exists || len(tools.([]any)) != 0 {
+		t.Fatalf("empty tools payload = %#v, want explicit empty array", empty)
 	}
 }
 

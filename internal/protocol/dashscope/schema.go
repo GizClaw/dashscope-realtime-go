@@ -13,7 +13,7 @@ type SessionUpdatePayload struct {
 
 	InputAudioTranscription *InputAudioTranscriptionPayload `json:"input_audio_transcription,omitempty"`
 	TurnDetection           *TurnDetectionPayload           `json:"turn_detection,omitempty"`
-	Tools                   []FunctionToolPayload           `json:"tools,omitempty"`
+	Tools                   *[]FunctionToolPayload          `json:"tools,omitempty"`
 }
 
 type FunctionToolPayload struct {

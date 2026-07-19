@@ -131,8 +131,8 @@ func (s *RealtimeSession) UpdateSession(config *SessionConfig) error {
 		MaxOutputTokens:   config.MaxOutputTokens,
 	}
 
-	if len(config.Tools) > 0 {
-		payload.Tools = make([]internalproto.FunctionToolPayload, 0, len(config.Tools))
+	if config.Tools != nil {
+		tools := make([]internalproto.FunctionToolPayload, 0, len(config.Tools))
 		for _, tool := range config.Tools {
 			if tool.Type != ToolTypeFunction {
 				return newInvalidParameterError("tool type must be function")
@@ -140,15 +140,16 @@ func (s *RealtimeSession) UpdateSession(config *SessionConfig) error {
 			if strings.TrimSpace(tool.Function.Name) == "" {
 				return newInvalidParameterError("function name cannot be empty")
 			}
-			payload.Tools = append(payload.Tools, internalproto.FunctionToolPayload{
+			tools = append(tools, internalproto.FunctionToolPayload{
 				Type: ToolTypeFunction,
 				Function: internalproto.FunctionDefinitionPayload{
-					Name:        tool.Function.Name,
+					Name:        strings.TrimSpace(tool.Function.Name),
 					Description: tool.Function.Description,
 					Parameters:  toProtocolJSONSchema(tool.Function.Parameters),
 				},
 			})
 		}
+		payload.Tools = &tools
 	}
 
 	if config.EnableInputAudioTranscription {

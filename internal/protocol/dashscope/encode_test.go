@@ -11,29 +11,28 @@ func TestSessionUpdateEventEncodesFunctionToolSchema(t *testing.T) {
 	maxLength := 64
 	minimum := 0.0
 	maximum := 10.0
-	event := SessionUpdateEvent("event_1", SessionUpdatePayload{
-		Tools: []FunctionToolPayload{{
-			Type: "function",
-			Function: FunctionDefinitionPayload{
-				Name:        "lookup_weather",
-				Description: "Look up weather",
-				Parameters: &JSONSchemaPayload{
-					Type: "object",
-					Properties: map[string]*JSONSchemaPayload{
-						"city": {Type: "string", MinLength: &minLength, MaxLength: &maxLength},
-						"days": {Type: "number", Minimum: &minimum, Maximum: &maximum},
-						"tags": {Type: "array", Items: &JSONSchemaPayload{Type: "string"}},
-						"units": {AnyOf: []*JSONSchemaPayload{
-							{Type: "string", Enum: []any{"celsius", "fahrenheit"}},
-							{Type: "null"},
-						}},
-					},
-					Required:             []string{"city"},
-					AdditionalProperties: &additionalProperties,
+	tools := []FunctionToolPayload{{
+		Type: "function",
+		Function: FunctionDefinitionPayload{
+			Name:        "lookup_weather",
+			Description: "Look up weather",
+			Parameters: &JSONSchemaPayload{
+				Type: "object",
+				Properties: map[string]*JSONSchemaPayload{
+					"city": {Type: "string", MinLength: &minLength, MaxLength: &maxLength},
+					"days": {Type: "number", Minimum: &minimum, Maximum: &maximum},
+					"tags": {Type: "array", Items: &JSONSchemaPayload{Type: "string"}},
+					"units": {AnyOf: []*JSONSchemaPayload{
+						{Type: "string", Enum: []any{"celsius", "fahrenheit"}},
+						{Type: "null"},
+					}},
 				},
+				Required:             []string{"city"},
+				AdditionalProperties: &additionalProperties,
 			},
-		}},
-	})
+		},
+	}}
+	event := SessionUpdateEvent("event_1", SessionUpdatePayload{Tools: &tools})
 
 	encoded, err := Marshal(event)
 	if err != nil {
