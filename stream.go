@@ -155,11 +155,7 @@ func convertWireEvent(w *internalproto.WireEvent) *RealtimeEvent {
 	}
 
 	if w.Usage != nil {
-		event.Usage = &UsageStats{
-			TotalTokens:  w.Usage.TotalTokens,
-			InputTokens:  w.Usage.InputTokens,
-			OutputTokens: w.Usage.OutputTokens,
-		}
+		event.Usage = convertUsage(w.Usage)
 	}
 
 	if w.Error != nil {
@@ -222,11 +218,7 @@ func convertResponseInfo(in *internalproto.ResponseData) *ResponseInfo {
 	}
 
 	if in.Usage != nil {
-		out.Usage = &UsageStats{
-			TotalTokens:  in.Usage.TotalTokens,
-			InputTokens:  in.Usage.InputTokens,
-			OutputTokens: in.Usage.OutputTokens,
-		}
+		out.Usage = convertUsage(in.Usage)
 	}
 
 	if len(in.Output) > 0 {
@@ -311,4 +303,23 @@ func fromProtocolJSONSchema(in *internalproto.JSONSchemaPayload) *JSONSchema {
 		}
 	}
 	return out
+}
+
+// convertUsage maps wire usage, including the per-modality token details the
+// service reports as input_tokens_details and output_tokens_details.
+func convertUsage(in *internalproto.UsageData) *UsageStats {
+	return &UsageStats{
+		TotalTokens:        in.TotalTokens,
+		InputTokens:        in.InputTokens,
+		OutputTokens:       in.OutputTokens,
+		InputTokenDetails:  convertTokenDetails(in.InputTokensDetails),
+		OutputTokenDetails: convertTokenDetails(in.OutputTokensDetails),
+	}
+}
+
+func convertTokenDetails(in *internalproto.TokenDetailsData) *TokenDetails {
+	if in == nil {
+		return nil
+	}
+	return &TokenDetails{TextTokens: in.TextTokens, AudioTokens: in.AudioTokens, ImageTokens: in.ImageTokens}
 }
