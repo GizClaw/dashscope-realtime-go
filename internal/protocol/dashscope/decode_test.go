@@ -97,7 +97,9 @@ func TestDecodeServerEventUsage(t *testing.T) {
 			"usage": {
 				"total_tokens": 3,
 				"input_tokens": 1,
-				"output_tokens": 2
+				"output_tokens": 2,
+				"input_tokens_details": {"text_tokens": 1},
+				"output_tokens_details": {"text_tokens": 1, "audio_tokens": 1}
 			}
 		}
 	}`)
@@ -126,6 +128,12 @@ func TestDecodeServerEventUsage(t *testing.T) {
 	}
 	if event.Usage.TotalTokens != 3 || event.Usage.InputTokens != 1 || event.Usage.OutputTokens != 2 {
 		t.Fatalf("unexpected usage: %#v", event.Usage)
+	}
+	if event.Usage.InputTokensDetails == nil || *event.Usage.InputTokensDetails != (TokenDetailsData{TextTokens: 1}) {
+		t.Fatalf("unexpected input token details: %#v", event.Usage.InputTokensDetails)
+	}
+	if event.Usage.OutputTokensDetails == nil || *event.Usage.OutputTokensDetails != (TokenDetailsData{TextTokens: 1, AudioTokens: 1}) {
+		t.Fatalf("unexpected output token details: %#v", event.Usage.OutputTokensDetails)
 	}
 }
 

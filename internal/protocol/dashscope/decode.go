@@ -160,10 +160,20 @@ func cloneUsage(in *UsageData) *UsageData {
 		return nil
 	}
 	return &UsageData{
-		TotalTokens:  in.TotalTokens,
-		InputTokens:  in.InputTokens,
-		OutputTokens: in.OutputTokens,
+		TotalTokens:         in.TotalTokens,
+		InputTokens:         in.InputTokens,
+		OutputTokens:        in.OutputTokens,
+		InputTokensDetails:  cloneTokenDetails(in.InputTokensDetails),
+		OutputTokensDetails: cloneTokenDetails(in.OutputTokensDetails),
 	}
+}
+
+func cloneTokenDetails(in *TokenDetailsData) *TokenDetailsData {
+	if in == nil {
+		return nil
+	}
+	out := *in
+	return &out
 }
 
 func unmarshalString(raw json.RawMessage, dst *string) error {

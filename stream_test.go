@@ -172,3 +172,29 @@ func TestConvertWireEventMapsSessionTools(t *testing.T) {
 		t.Fatalf("parameters = %#v", parameters)
 	}
 }
+
+func TestConvertWireEventMapsUsageTokenDetails(t *testing.T) {
+	usage := &internalproto.UsageData{
+		TotalTokens:         491,
+		InputTokens:         476,
+		OutputTokens:        15,
+		InputTokensDetails:  &internalproto.TokenDetailsData{TextTokens: 476},
+		OutputTokensDetails: &internalproto.TokenDetailsData{TextTokens: 5, AudioTokens: 10},
+	}
+	event := convertWireEvent(&internalproto.WireEvent{
+		Type:     EventTypeResponseDone,
+		Usage:    usage,
+		Response: &internalproto.ResponseData{ID: "resp_1", Usage: usage},
+	})
+	for name, got := range map[string]*UsageStats{"event": event.Usage, "response": event.Response.Usage} {
+		if got == nil || got.TotalTokens != 491 || got.InputTokens != 476 || got.OutputTokens != 15 {
+			t.Fatalf("%s usage = %#v", name, got)
+		}
+		if got.InputTokenDetails == nil || *got.InputTokenDetails != (TokenDetails{TextTokens: 476}) {
+			t.Fatalf("%s input details = %#v", name, got.InputTokenDetails)
+		}
+		if got.OutputTokenDetails == nil || *got.OutputTokenDetails != (TokenDetails{TextTokens: 5, AudioTokens: 10}) {
+			t.Fatalf("%s output details = %#v", name, got.OutputTokenDetails)
+		}
+	}
+}

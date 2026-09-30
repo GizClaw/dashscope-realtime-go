@@ -42,7 +42,7 @@ func main() {
 	baseURL := strings.TrimSpace(os.Getenv("DASHSCOPE_BASE_URL"))
 	model := strings.TrimSpace(os.Getenv("DASHSCOPE_MODEL"))
 	if model == "" {
-		model = dashscope.ModelQwenOmniTurboRealtimeLatest
+		model = dashscope.ModelQwen35OmniPlusRealtime
 	}
 
 	options := []dashscope.Option{}
@@ -114,7 +114,7 @@ func main() {
 		roundsOut = append(roundsOut, audioRound{Transcript: strings.TrimSpace(text), AudioBytes: audioBytes, Usage: usage})
 		fmt.Printf("\n[round %d]\ntranscript: %s\naudio-bytes: %d\n", round, strings.TrimSpace(text), audioBytes)
 		if usage != nil {
-			log.Printf("[round %d] token usage: input=%d output=%d total=%d", round, usage.InputTokens, usage.OutputTokens, usage.TotalTokens)
+			log.Printf("[round %d] token usage: %s", round, formatUsage(usage))
 		}
 
 		if round == 1 && *testHistoryEdit {
@@ -488,4 +488,20 @@ func streamEvents(session *dashscope.RealtimeSession) (<-chan *dashscope.Realtim
 	}()
 
 	return eventCh, errCh
+}
+
+// formatUsage prints token totals and the per-modality details the service
+// reports on response.done.
+func formatUsage(usage *dashscope.UsageStats) string {
+	return fmt.Sprintf("input=%d%s output=%d%s total=%d",
+		usage.InputTokens, formatTokenDetails(usage.InputTokenDetails),
+		usage.OutputTokens, formatTokenDetails(usage.OutputTokenDetails),
+		usage.TotalTokens)
+}
+
+func formatTokenDetails(details *dashscope.TokenDetails) string {
+	if details == nil {
+		return ""
+	}
+	return fmt.Sprintf(" (text=%d audio=%d image=%d)", details.TextTokens, details.AudioTokens, details.ImageTokens)
 }

@@ -99,6 +99,16 @@ type UsageData struct {
 	TotalTokens  int `json:"total_tokens,omitempty"`
 	InputTokens  int `json:"input_tokens,omitempty"`
 	OutputTokens int `json:"output_tokens,omitempty"`
+
+	InputTokensDetails  *TokenDetailsData `json:"input_tokens_details,omitempty"`
+	OutputTokensDetails *TokenDetailsData `json:"output_tokens_details,omitempty"`
+}
+
+// TokenDetailsData splits usage tokens by modality.
+type TokenDetailsData struct {
+	TextTokens  int `json:"text_tokens,omitempty"`
+	AudioTokens int `json:"audio_tokens,omitempty"`
+	ImageTokens int `json:"image_tokens,omitempty"`
 }
 
 // ResponseData is response payload from server events.
