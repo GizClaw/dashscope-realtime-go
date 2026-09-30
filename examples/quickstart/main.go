@@ -19,7 +19,7 @@ func main() {
 	baseURL := strings.TrimSpace(os.Getenv("DASHSCOPE_BASE_URL"))
 	model := strings.TrimSpace(os.Getenv("DASHSCOPE_MODEL"))
 	if model == "" {
-		model = dashscope.ModelQwenOmniTurboRealtimeLatest
+		model = dashscope.ModelQwen35OmniPlusRealtime
 	}
 
 	options := []dashscope.Option{}

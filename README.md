@@ -48,7 +48,7 @@ func main() {
     defer cancel()
 
     session, err := client.Realtime.Connect(ctx, &dashscope.RealtimeConfig{
-        Model: dashscope.ModelQwenOmniTurboRealtimeLatest,
+        Model: dashscope.ModelQwen35OmniPlusRealtime,
     })
     if err != nil {
         log.Fatal(err)
